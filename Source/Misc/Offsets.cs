@@ -156,6 +156,11 @@
         public static readonly uint[] To_HandsController = new uint[] { ObservedPlayerController, 0xD8 }; // to HandsController
     }
 
+
+    
+
+
+
     public struct HealthController
     {
         public const uint HealthStatus = 0xD8; // [D8] HealthStatus : System.Int32
