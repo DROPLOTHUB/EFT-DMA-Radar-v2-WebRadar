@@ -11,16 +11,19 @@
         // Define the main FPSExploit class
         public static class FPSExploit
         {
-            // Pass the player instance to the method
+            // Method to execute the exploit
             public static void ExecuteExploit()
             {
-                // Check if the player is the local player
-             
+                // Check if the local player is the one interacting
+         
+                
                     // Trigger the tripwire interaction sound using the defined offset
-                    // Example memory write (replace with your actual implementation)
-                    Memory.WriteValue(EInteractionStatus.TripwireInteractionSoundController, 1000); // Hypothetical function
+                    // Write '1' to the offset to enable the sound
+                    Memory.WriteValue(EInteractionStatus.TripwireInteractionSoundController, 1); // 1 to trigger the sound
                 
             }
+
+        
         }
     }
 }
