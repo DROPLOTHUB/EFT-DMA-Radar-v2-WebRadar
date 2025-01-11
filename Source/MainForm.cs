@@ -22,7 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.WebSockets;
-using eft_dma_radar.Source.Misc;
+
 
 namespace eft_dma_radar
 {
@@ -3764,6 +3764,12 @@ namespace eft_dma_radar
             swWeaponSway.Checked = enabled;
         }
 
+        private void ExtraLean(bool enabled)
+        {
+          //  this.config.WeaponSway = enabled;
+            cpukiller.Checked = enabled;
+        }
+
         private void SetOpticalThermal(bool enabled)
         {
             this.config.OpticThermalVision = enabled;
@@ -6219,7 +6225,7 @@ namespace eft_dma_radar
         {
             if (cpukiller.Checked)
             {
-                CPUKILLER.FPSExploit.ExecuteExploit();  // Call directly without needing localPlayer
+             
             }
             else
             {

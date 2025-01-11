@@ -4479,7 +4479,7 @@
             cpukiller.Ripple = true;
             cpukiller.Size = new Size(152, 28);
             cpukiller.TabIndex = 52;
-            cpukiller.Text = "CPU KILLER";
+            cpukiller.Text = "Extra Lean";
             toolTip.SetToolTip(cpukiller, "Enables adjusting player time scale (speed hack)");
             cpukiller.UseVisualStyleBackColor = true;
             cpukiller.CheckedChanged += cpukiller_CheckedChanged;
