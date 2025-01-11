@@ -154,6 +154,11 @@ namespace eft_dma_radar
             get => _game?.Toolbox;
         }
 
+        public static World World
+        {
+            get => _game?.World;
+        }
+
         public static Chams Chams
         {
             get => _game?.Chams;

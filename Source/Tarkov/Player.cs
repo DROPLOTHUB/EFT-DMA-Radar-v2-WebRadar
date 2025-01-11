@@ -413,17 +413,18 @@ namespace eft_dma_radar
         {
             try
             {
-                var ammo_template = Memory.ReadPtrChain(this.Base, [Offsets.Player.HandsController, 0x60, 0x40, 0x190]);//[190] _defAmmoTemplate : EFT.InventoryLogic.AmmoTemplate
-
-                if (ammo_template != 0)
-                {
-                    this.bullet_speed = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->InitialSpeed : Single
-                    this.ballistic_coeff = Memory.ReadValue<float>(ammo_template + 0x1D0);//EFT.InventoryLogic.AmmoTemplate->BallisticCoeficient : Single
-                    this.bullet_mass = Memory.ReadValue<float>(ammo_template + 0x258);//EFT.InventoryLogic.AmmoTemplate->BulletMassGram : Single
-                    this.bullet_diam = Memory.ReadValue<float>(ammo_template + 0x25C);//EFT.InventoryLogic.AmmoTemplate->BulletDiameterMilimeters : Single
-                    this.bullet_velocity = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->BulletDiameterMilimeters : Single
-                    
-                }
+                //var ammo_template = Memory.ReadPtrChain(this.Base, [Offsets.HandsController.Item, 0x40, 0x198]); //[190] _defAmmoTemplate : EFT.InventoryLogic.AmmoTemplate
+////
+                //if (ammo_template != 0)
+                //{
+                //    this.bullet_speed = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->InitialSpeed : Single
+                //    this.ballistic_coeff = Memory.ReadValue<float>(ammo_template + 0x1D0);//EFT.InventoryLogic.AmmoTemplate->BallisticCoeficient : Single
+                //    this.bullet_mass = Memory.ReadValue<float>(ammo_template + 0x258);//EFT.InventoryLogic.AmmoTemplate->BulletMassGram : Single
+                //    this.bullet_diam = Memory.ReadValue<float>(ammo_template + 0x25C);//EFT.InventoryLogic.AmmoTemplate->BulletDiameterMilimeters : Single
+                //    this.bullet_velocity = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->[1BC] InitialSpeed : Single
+                //    
+                //}
+                //Program.Log($"Got Ammo Info '{bullet_speed}' '{ballistic_coeff}' '{bullet_mass}' '{bullet_diam}'");
                 return true;
             }
             catch (Exception ex)

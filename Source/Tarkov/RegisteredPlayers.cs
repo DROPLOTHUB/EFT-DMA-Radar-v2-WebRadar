@@ -12,7 +12,6 @@ namespace eft_dma_radar
         private readonly ulong _listBase;
         private readonly Stopwatch _regSw = new();
         private readonly Stopwatch _healthSw = new();
-        private readonly Stopwatch _AmmoSw = new();
         private readonly Stopwatch _posSw = new();
         private readonly Stopwatch _weaponSw = new();
 
@@ -73,7 +72,6 @@ namespace eft_dma_radar
             this._listBase = Memory.ReadPtr(this._base + 0x0010);
             this._regSw.Start();
             this._healthSw.Start();
-            this._AmmoSw.Start();
             this._posSw.Start();
             this._weaponSw.Start();
         }
@@ -291,7 +289,6 @@ namespace eft_dma_radar
                 }
 
                 var checkHealth = this._healthSw.ElapsedMilliseconds > 500;
-                var checkAmmo = this._AmmoSw.ElapsedMilliseconds > 200;
                 var checkWeaponInfo = this._weaponSw.ElapsedMilliseconds > 2500;
                 var checkPos = this._posSw.ElapsedMilliseconds > 10000 && players.Any(x => x.IsHumanActive);
 
@@ -455,9 +452,6 @@ namespace eft_dma_radar
                             if (scatterMap.Results[i][6].TryGetResult<int>(out var hp))
                                 player.SetHealth(hp);
 
-                        if (checkAmmo && player.IsLocalPlayer)
-                            player.SetAmmo();
-
                         if (checkWeaponInfo && !player.IsZombie)
                         {
                             try
@@ -473,7 +467,8 @@ namespace eft_dma_radar
                                     player.SetItemInHands(activeWeaponPtr);
 
                                 player.CheckForRequiredGear();
-                            } catch { }
+                            }
+                            catch { }
                         }
 
                         if (p2 && p3)
@@ -485,9 +480,6 @@ namespace eft_dma_radar
 
                 if (checkHealth)
                     this._healthSw.Restart();
-
-                if (checkAmmo)
-                    this._AmmoSw.Restart();
 
                 if (checkPos)
                     this._posSw.Restart();

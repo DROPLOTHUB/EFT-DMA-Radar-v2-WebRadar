@@ -21,6 +21,7 @@ namespace eft_dma_radar
         private CameraManager _cameraManager;
         private QuestManager _questManager;
         private Toolbox _toolbox;
+        private World _world;
         private Chams _chams;
         private CorpseManager _corpseManager;
         private ulong _localGameWorld;
@@ -31,7 +32,6 @@ namespace eft_dma_radar
         private volatile bool _refreshLoot = false;
         private volatile string _mapName = string.Empty;
         private volatile bool _isScav = false;
-
         //paskakoodi
         private Aimbot _aimbot = new Aimbot();
 
@@ -139,6 +139,11 @@ namespace eft_dma_radar
             get => _questManager;
         }
 
+        public World World
+        {
+            get => _world;
+        }
+
         public Chams Chams
         {
             get => _chams;
@@ -179,9 +184,8 @@ namespace eft_dma_radar
 
                 this._rgtPlayers.UpdateList();
                 this._rgtPlayers.UpdateAllPlayers();
-
                 //paskakoodi
-                this._aimbot.AimerBotter();
+                this._aimbot.AimerBotter();                
                 this.UpdateMisc();
             }
             catch (DMAShutdown)
@@ -465,6 +469,18 @@ namespace eft_dma_radar
 
                 if (this._config.MasterSwitch && Memory.GameStatus == Game.GameStatus.InGame)
                 {
+                    if (this._world is null)
+                    {
+                        try
+                        {
+                            this._world = new World();
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.Log($"ERROR loading World: {ex}");
+                        }
+                    }
+
                     if (this._cameraManager is null)
                     {
                         try
