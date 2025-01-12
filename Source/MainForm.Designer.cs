@@ -232,7 +232,6 @@
             sldrMoonIntensity = new MaterialSkin.Controls.MaterialSlider();
             swSunIntensity = new MaterialSkin.Controls.MaterialSwitch();
             sldrSunIntensity = new MaterialSkin.Controls.MaterialSlider();
-            cpukiller = new MaterialSkin.Controls.MaterialSwitch();
             tabSettingAimbot = new TabPage();
             msSAMaterialCard = new MaterialSkin.Controls.MaterialCard();
             msSAKeyText = new MaterialSkin.Controls.MaterialLabel();
@@ -4466,24 +4465,6 @@
             sldrSunIntensity.ValueMax = 30;
             sldrSunIntensity.onValueChanged += sldrSunIntensity_onValueChanged;
             // 
-            // cpukiller
-            // 
-            cpukiller.Depth = 0;
-            cpukiller.Enabled = false;
-            cpukiller.Font = new Font("Segoe UI", 9F);
-            cpukiller.Location = new Point(17, 280);
-            cpukiller.Margin = new Padding(0);
-            cpukiller.MouseLocation = new Point(-1, -1);
-            cpukiller.MouseState = MaterialSkin.MouseState.HOVER;
-            cpukiller.Name = "cpukiller";
-            cpukiller.Ripple = true;
-            cpukiller.Size = new Size(152, 28);
-            cpukiller.TabIndex = 52;
-            cpukiller.Text = "Extra Lean";
-            toolTip.SetToolTip(cpukiller, "Enables adjusting player time scale (speed hack)");
-            cpukiller.UseVisualStyleBackColor = true;
-            cpukiller.CheckedChanged += cpukiller_CheckedChanged;
-            // 
             // tabSettingAimbot
             // 
             tabSettingAimbot.Controls.Add(msSAMaterialCard);
@@ -4491,7 +4472,7 @@
             tabSettingAimbot.Location = new Point(4, 24);
             tabSettingAimbot.Name = "tabSettingAimbot";
             tabSettingAimbot.Padding = new Padding(3);
-            tabSettingAimbot.Size = new Size(1370, 640);
+            tabSettingAimbot.Size = new Size(1484, 640);
             tabSettingAimbot.TabIndex = 5;
             tabSettingAimbot.Text = "Aim";
             tabSettingAimbot.ToolTipText = "Picks target closest to you.";
@@ -4648,7 +4629,7 @@
             // 
             WebRadar.Location = new Point(4, 39);
             WebRadar.Name = "WebRadar";
-            WebRadar.Size = new Size(1378, 703);
+            WebRadar.Size = new Size(1492, 703);
             WebRadar.TabIndex = 5;
             // 
             // materialCard1
@@ -5439,7 +5420,7 @@
             tabSettingsHotkeys.Location = new Point(4, 24);
             tabSettingsHotkeys.Name = "tabSettingsHotkeys";
             tabSettingsHotkeys.Padding = new Padding(3);
-            tabSettingsHotkeys.Size = new Size(1370, 640);
+            tabSettingsHotkeys.Size = new Size(1484, 640);
             tabSettingsHotkeys.TabIndex = 5;
             tabSettingsHotkeys.Text = "Hotkeys";
             tabSettingsHotkeys.UseVisualStyleBackColor = true;
@@ -5528,14 +5509,13 @@
             tabSettingsMemoryWriting.Location = new Point(4, 24);
             tabSettingsMemoryWriting.Name = "tabSettingsMemoryWriting";
             tabSettingsMemoryWriting.Padding = new Padding(3);
-            tabSettingsMemoryWriting.Size = new Size(1370, 640);
+            tabSettingsMemoryWriting.Size = new Size(1484, 640);
             tabSettingsMemoryWriting.TabIndex = 1;
             tabSettingsMemoryWriting.Text = "Memory Writing";
             // 
             // mcSettingsMemoryWritingWorld
             // 
             mcSettingsMemoryWritingWorld.BackColor = Color.FromArgb(255, 255, 255);
-            mcSettingsMemoryWritingWorld.Controls.Add(cpukiller);
             mcSettingsMemoryWritingWorld.Controls.Add(swSunIntensity);
             mcSettingsMemoryWritingWorld.Controls.Add(sldrSunIntensity);
             mcSettingsMemoryWritingWorld.Controls.Add(swMoonIntensity);
@@ -5559,7 +5539,7 @@
             mcSettingsMemoryWritingWorld.MouseState = MaterialSkin.MouseState.HOVER;
             mcSettingsMemoryWritingWorld.Name = "mcSettingsMemoryWritingWorld";
             mcSettingsMemoryWritingWorld.Padding = new Padding(14);
-            mcSettingsMemoryWritingWorld.Size = new Size(476, 330);
+            mcSettingsMemoryWritingWorld.Size = new Size(476, 288);
             mcSettingsMemoryWritingWorld.TabIndex = 44;
             // 
             // lblSettingsMemoryWritingWorld
@@ -5827,7 +5807,7 @@
             tabSettingsLoot.Location = new Point(4, 24);
             tabSettingsLoot.Margin = new Padding(0);
             tabSettingsLoot.Name = "tabSettingsLoot";
-            tabSettingsLoot.Size = new Size(1370, 640);
+            tabSettingsLoot.Size = new Size(1484, 640);
             tabSettingsLoot.TabIndex = 2;
             tabSettingsLoot.Text = "Loot/Quests";
             // 
@@ -5998,7 +5978,7 @@
             tabSettingsAIFactions.Location = new Point(4, 24);
             tabSettingsAIFactions.Margin = new Padding(0);
             tabSettingsAIFactions.Name = "tabSettingsAIFactions";
-            tabSettingsAIFactions.Size = new Size(1370, 640);
+            tabSettingsAIFactions.Size = new Size(1484, 640);
             tabSettingsAIFactions.TabIndex = 3;
             tabSettingsAIFactions.Text = "AI Factions";
             // 
@@ -6135,7 +6115,7 @@
             tabSettingsColors.Location = new Point(4, 24);
             tabSettingsColors.Margin = new Padding(0);
             tabSettingsColors.Name = "tabSettingsColors";
-            tabSettingsColors.Size = new Size(1370, 640);
+            tabSettingsColors.Size = new Size(1484, 640);
             tabSettingsColors.TabIndex = 4;
             tabSettingsColors.Text = "Colors";
             // 
@@ -7392,7 +7372,7 @@
             tabPlayerLoadouts.ImageKey = "loadouts.png";
             tabPlayerLoadouts.Location = new Point(4, 39);
             tabPlayerLoadouts.Name = "tabPlayerLoadouts";
-            tabPlayerLoadouts.Size = new Size(1378, 703);
+            tabPlayerLoadouts.Size = new Size(1492, 703);
             tabPlayerLoadouts.TabIndex = 2;
             tabPlayerLoadouts.Text = "Player Loadouts";
             // 
@@ -7538,7 +7518,7 @@
             tabWatchlist.ImageKey = "watchlist.png";
             tabWatchlist.Location = new Point(4, 39);
             tabWatchlist.Name = "tabWatchlist";
-            tabWatchlist.Size = new Size(1378, 703);
+            tabWatchlist.Size = new Size(1492, 703);
             tabWatchlist.TabIndex = 3;
             tabWatchlist.Text = "Watchlist";
             // 
@@ -7740,7 +7720,7 @@
             tabLootFilter.ImageKey = "loot.png";
             tabLootFilter.Location = new Point(4, 39);
             tabLootFilter.Name = "tabLootFilter";
-            tabLootFilter.Size = new Size(1378, 703);
+            tabLootFilter.Size = new Size(1492, 703);
             tabLootFilter.TabIndex = 4;
             tabLootFilter.Text = "Loot Filter";
             // 
@@ -8545,7 +8525,6 @@
         private MaterialSkin.Controls.MaterialSlider msSAFov;
         private MaterialSkin.Controls.MaterialLabel msSASilentAim;
         private MaterialSkin.Controls.MaterialLabel msSAKeyBind;
-        private MaterialSkin.Controls.MaterialSwitch cpukiller;
         //WebRadar              
     }
 }

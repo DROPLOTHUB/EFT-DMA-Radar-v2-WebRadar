@@ -302,19 +302,6 @@ namespace eft_dma_radar
             }
         }
 
-        public void ExtraLean(bool on, float amount, ref  List<IScatterWriteEntry> entries)
-        {
-            try
-            {
-                entries.Add(new ScatterWriteDataEntry<float>(0x1E0 + 0x2c0, 0.35f));
-                entries.Add(new ScatterWriteDataEntry<Vector3>(0x20 + 0xcc, new Vector3(0.7f, 0.01f, 0)));
-            }
-            catch (Exception ex)
-            {
-                Program.Log($"[PlayerManager] - ExtraLean ({ex.Message})\n{ex.StackTrace}");
-            }
-        }
-
         public void SetWeaponSway(bool on, float intensity, ref List<IScatterWriteEntry> entries)
         {
             try

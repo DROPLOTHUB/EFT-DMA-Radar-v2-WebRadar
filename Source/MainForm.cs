@@ -23,7 +23,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.WebSockets;
 
-
 namespace eft_dma_radar
 {
     public partial class frmMain : MaterialForm
@@ -113,7 +112,7 @@ namespace eft_dma_radar
         //WebRadar
         private IHost _webHost;
         private Process _sshProcess;
-        private SshClient _sshClient;
+        private SshClient _sshClient; 
         //WebRadar  
         private readonly string[] hotkeyCboActions =
         {
@@ -1039,12 +1038,12 @@ namespace eft_dma_radar
             PublicHostname.Text = link;
             hostnameTextBox.Text = link;
 
-            // Update the Config object with the new hostname
-            config.Hostname = hostnameTextBox.Text;
-            Program.Log("Hostname set to: " + config.Hostname); // Debug line
+                    // Update the Config object with the new hostname
+                    config.Hostname = hostnameTextBox.Text;
+                    Program.Log("Hostname set to: " + config.Hostname); // Debug line
 
-            // Save the Config object to the configuration file
-            Config.SaveConfig(config);
+                    // Save the Config object to the configuration file
+                    Config.SaveConfig(config);    
         }
 
         private string ExtractPublicHostname(string sshOutput)
@@ -1182,7 +1181,7 @@ namespace eft_dma_radar
                 // Provide feedback to the user
                 Program.Log("Hostname saved successfully!");
             }
-        }
+        }        
         private void msSAEnableSilentAim_CheckedChanged(object sender, EventArgs e)
         {
             config.SAEnableAimbot = msSAEnableSilentAim.Checked;
@@ -1239,14 +1238,14 @@ namespace eft_dma_radar
 
         }
 
-        private void msSAFov_onValueChanged(object sender, int newValue)
+        private void msSAFov_onValueChanged(object sender,  int newValue)
         {
             config.SAAimbotFOV = msSAFov.Value;
             Config.SaveConfig(config);
 
         }
 
-        private void msSADistance_onValueChanged(object sender, int newValue)
+        private void msSADistance_onValueChanged(object sender,  int newValue)
         {
             config.SAAimbotMaxDistance = msSADistance.Value;
             Config.SaveConfig(config);
@@ -1325,21 +1324,21 @@ namespace eft_dma_radar
 
         }
 
-        private void sldrAimbotFOV_onValueChanged(object sender, int newValue)
+        private void sldrAimbotFOV_onValueChanged(object sender,  int newValue)
         {
             config.AimbotFOV = sldrAimbotFOV.Value;
             Config.SaveConfig(config);
 
         }
 
-        private void sldrAimbotSmoothness_onValueChanged(object sender, int newValue)
+        private void sldrAimbotSmoothness_onValueChanged(object sender,  int newValue)
         {
             config.AimbotSmoothness = sldrAimbotSmoothness.Value;
             Config.SaveConfig(config);
 
         }
 
-        private void sldrAimDistance_onValueChanged(object sender, int newValue)
+        private void sldrAimDistance_onValueChanged(object sender,  int newValue)
         {
             config.AimbotMaxDistance = sldrAimDistance.Value;
             Config.SaveConfig(config);
@@ -1392,7 +1391,7 @@ namespace eft_dma_radar
             config.SASilentAimKey = mouseButtonCode; // Save the mouse button code in your config
             this.KeyDown -= SAMainForm_KeyDown; // Unsubscribe from the event
             this.MouseDown -= SAMainForm_MouseDown; // Unsubscribe from MouseDown event
-        }
+        } 
 
         private void MainForm_MouseDown(object sender, MouseEventArgs e)
         {
@@ -3762,12 +3761,6 @@ namespace eft_dma_radar
         {
             this.config.WeaponSway = enabled;
             swWeaponSway.Checked = enabled;
-        }
-
-        private void ExtraLean(bool enabled)
-        {
-          //  this.config.WeaponSway = enabled;
-            cpukiller.Checked = enabled;
         }
 
         private void SetOpticalThermal(bool enabled)
@@ -6220,18 +6213,5 @@ namespace eft_dma_radar
         #endregion
         #endregion
         #endregion
-
-        private void cpukiller_CheckedChanged(object sender, EventArgs e)
-        {
-            if (cpukiller.Checked)
-            {
-             
-            }
-            else
-            {
-                // Optionally, handle the unchecked state
-                Console.WriteLine("CPU Killer exploit disabled.");
-            }
-        }
     }
 }
