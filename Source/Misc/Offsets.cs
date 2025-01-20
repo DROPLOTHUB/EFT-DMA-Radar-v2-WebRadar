@@ -27,7 +27,7 @@
     {
         public const uint GameObjectManager = 0x1CF93E0; // to GameObjectManager
         public const uint CameraObjectManager = 0x1BF8BC0; // to Camera
-        public const uint TimeScale = 0x17FFAE0; // to TimeScale
+        public const uint TimeScale = 0x1C91778; // to TimeScale
     }
 
     public struct TimeScale
@@ -125,9 +125,11 @@
         public const uint Location = 0x5C8; // [5C8] <Location>k__BackingField : String
         public const uint Profile = 0x600; // [600] <Profile>k__BackingField : EFT.Profile
         public const uint Physical = 0x610; // [610] Physical : -.GClass07FA
+        public const uint HealthController = 0x640; // [640] _healthController : EFT.HealthSystem.IHealthController
         public const uint InventoryController = 0x658; // [658] _inventoryController : -.Player.PlayerInventoryController
         public const uint HandsController = 0x660; // [660] _handsController : -.Player.AbstractHandsController
         public const uint IsExtracting = 0x9A2; // [9A2] <ExitTriggerZone>k__BackingField : Boolean
+        public const uint CharacterController = 0x40; // [40] _characterController : UnityEngine.CharacterController
     }
 
     public struct Profile // EFT.Profile
@@ -155,7 +157,10 @@
         public static readonly uint[] To_HealthController = new uint[] { ObservedPlayerController, 0xF0 }; // to HealthController
         public static readonly uint[] To_HandsController = new uint[] { ObservedPlayerController, 0xD8 }; // to HandsController
     }
-
+    public struct CharacterController
+    {
+        public const uint Velocity = 0xEC; // Offline Velocity
+    }
     public struct HealthController
     {
         public const uint HealthStatus = 0xD8; // [D8] HealthStatus : System.Int32
@@ -169,6 +174,7 @@
     public struct ObservedPlayerMovementContext
     {
         public const uint Rotation = 0x88; // to Vector2
+        public const uint Velocity = 0x10C; // to Vector3
     }
 
     public struct PlayerSettings
@@ -179,7 +185,6 @@
     public struct InventoryController // -.Player.PlayerInventoryController
     {
         public const uint Inventory = 0x118; // [118] <Inventory>k__BackingField : EFT.InventoryLogic.Inventory
-        public const uint ObservedPlayerInventory = 0x138; // to Inventory
     }
 
     public struct Inventory
@@ -302,12 +307,17 @@
     public struct FirearmController
     {
         public const uint WeaponLn = 0x184; // [184] WeaponLn : Single
-        public const uint Fireport = 0xC8; //[D0] Fireport : EFT.BifacialTransform //paskakoodi
+        public const uint Fireport = 0xC8; //[D0] Fireport : EFT.BifacialTransform //Aimbot
+    }
+
+    public struct Fireport
+    {
+        public static readonly uint[] To_TransfromInternal = new uint[] { 0x10, 0x10 };
     }
 
     public struct HandsController
     {
-        public const uint Item = 0x68; // [68] item_0x60 : EFT.InventoryLogic.Item
+        public const uint Item = 0x68; // [68] item_0x68 : EFT.InventoryLogic.Item
     }
 
     public struct ObservedHandsController
@@ -482,7 +492,8 @@
         public const uint StateSpeedLimit = 0x308; // [308] <StateSpeedLimit>k__BackingField : Single
         public const uint StateSprintSpeedLimit = 0x30C; // [30C] <StateSprintSpeedLimit>k__BackingField : Single
         public const uint Rotation = 0x408; // [408] _myRotation : UnityEngine.Vector2
-        public const uint _Rotation = 0x27C; // [27C] _Rotation : UnityEngine.Vector2
+        public const uint _Rotation = 0x27C; // [27C] _Rotation : UnityEngine.Vector2 //aimbot
+        public const uint Velocity = 0x10C; // [2A4] _Position : UnityEngine.Vector3 //aimbot
     }
 
     public struct Physical
@@ -603,9 +614,9 @@
 
     public struct Hashset
     {
-        public const uint Size = 0x10;
+        public const uint Size = 0x20;
         public const uint Base = 0x18;
-        public const uint Start = 0x28;
+        public const uint Start = 0x38;
         public const uint Count = 0x3C;
     }
 
@@ -632,14 +643,17 @@
         public const uint GameDateTime = 0x20; // [20] GameDateTime : EFT.GameDateTime
         public const uint LockCurrentTime = 0x70; // [70] LockCurrentTime : Boolean
     }
+
     public struct GameDateTime
     {
         public const uint Locked = 0x34; // [34] _locked : Boolean
     }
+
     public struct TOD_CycleParameters
     {
         public const uint Hour = 0x10; // [10] Hour : Single
     }
+
     public struct TOD_DayParameters
     {
         public const uint LightIntensity = 0x38; // [38] LightIntensity : Single
@@ -647,6 +661,7 @@
         public const uint AmbientMultiplier = 0x44; // [44] AmbientMultiplier : Single
         public const uint ReflectionMultiplier = 0x48; // [48] ReflectionMultiplier : Single
     }
+
     public struct TOD_NightParameters
     {
         public const uint LightIntensity = 0x38; // [38] LightIntensity : Single
@@ -654,39 +669,56 @@
         public const uint AmbientMultiplier = 0x44; // [44] AmbientMultiplier : Single
         public const uint ReflectionMultiplier = 0x48; // [48] ReflectionMultiplier : Single
     }
+
     public struct TOD_AmbientParameters
     {
         public const uint UpdateInterval = 0x14; // [14] UpdateInterval : Single
     }
+
     public struct TOD_MoonParameters
     {
         public const uint MeshSize = 0x20; // [20] MeshSize : Single
         public const uint MeshBrightness = 0x24; // [24] MeshBrightness : Single
         public const uint MeshContrast = 0x28; // [28] MeshContrast : Single
     }
+
     public struct TOD_SunParameters
     {
         public const uint MeshSize = 0x18; // [18] MeshSize : Single
         public const uint MeshBrightness = 0x1C; // [1C] MeshBrightness : Single
         public const uint MeshContrast = 0x20; // [20] MeshContrast : Single
     }
+
     public struct WeatherController
     {
         public const uint WeatherDebug = 0x68; // [68] WeatherDebug : EFT.Weather.WeatherDebug
     }
+
     public struct WeatherDebug
     {
         public const uint IsEnabled = 0x18; // [18] isEnabled : Boolean
         public const uint CloudDensity = 0x2C; // [2C] CloudDensity : Single
         public const uint Fog = 0x30; // [30] Fog : Single
         public const uint Rain = 0x34; // [34] Rain : Single
-    }    
-    public struct CameraShit
-    {
-        public static uint[] viewmatrix = new uint[] { 0x30, 0x18 }; //paskakoodi
     }
-    public struct Fireport
+
+    public struct PlayerBody
     {
-        public static readonly uint[] To_TransfromInternal = new uint[] { 0x10, 0x10 };
+        public const uint SkeletonRootJoint = 0x30; // [30] SkeletonRootJoint : Diz.Skinning.Skeleton
+    }
+
+    public struct SkeletonRootJoint
+    {
+        public const uint Bones = 0x30; // [30] _values : System.Collections.Generic.List<Transform>
+    }
+
+    public struct FPSCamera
+    {
+        public static uint[] To_ViewMatrix = new uint[] { 0x30, 0x18 };
+    }
+
+    public struct ViewMatrix
+    {
+        public const uint Matrix = 0x100;
     }
 }

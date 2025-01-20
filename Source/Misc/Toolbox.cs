@@ -7,7 +7,8 @@ namespace eft_dma_radar
         private Thread autoRefreshThread;
         private CancellationTokenSource autoRefreshCancellationTokenSource;
 
-        private const int MAX_ATTEMPTS = 3;
+        private const int MAX_ATTEMPTS = 4;
+        private bool _initialisingMonoAddresses = false;
 
         private bool medInfoPanel = false;
         private bool extendedReach = false;
@@ -49,7 +50,6 @@ namespace eft_dma_radar
         private Chams _chams { get => Memory.Chams; }
         private World _world{ get => Memory.World; }
 
-        private ulong GameWorld;
         private ulong HardSettings;
         private ulong TimeScale;
 
@@ -57,7 +57,8 @@ namespace eft_dma_radar
         private bool FoundEFTHardSettings = false;
         private bool FoundTOD_Sky = false;
         private bool FoundWeatherController = false;
-        private bool ShouldInitializeToolboxMono => !this.ToolboxMonoInitialized && Memory.InGame && Memory.LocalPlayer is not null;
+        private bool ShouldInitializeToolboxMono => !this.ToolboxMonoInitialized && Memory.InGame && Memory.LocalPlayer is not null; 
+        public bool InitialisingMonoAddresses { get => this._initialisingMonoAddresses; }
 
         public bool UpdateExtendedReachDistance { get; set; } = false;
         public bool UpdateThermalSettings{ get; set; } = false;
@@ -151,6 +152,7 @@ namespace eft_dma_radar
             if (this.ShouldInitializeToolboxMono)
             {
                 var attempts = 0;
+                this._initialisingMonoAddresses = true;
 
                 while (attempts < MAX_ATTEMPTS && !this.FoundTOD_Sky)
                 {
@@ -170,7 +172,7 @@ namespace eft_dma_radar
 
                         if (attempts == MAX_ATTEMPTS)
                         {
-                            Program.Log("[Toolbox] Failed to get TOD_Sky 3 times, skipping!");
+                            Program.Log($"[Toolbox] Failed to get TOD_Sky {MAX_ATTEMPTS} times, skipping!");
                             break;
                         }
                     }
@@ -193,7 +195,7 @@ namespace eft_dma_radar
 
                         if (attempts == MAX_ATTEMPTS)
                         {
-                            Program.Log("[Toolbox] Failed to get EFTHardSettings 3 times, skipping!");
+                            Program.Log($"[Toolbox] Failed to get EFTHardSettings {MAX_ATTEMPTS} times, skipping!");
                             break;
                         }
                     }
@@ -219,7 +221,7 @@ namespace eft_dma_radar
 
                         if (attempts == MAX_ATTEMPTS)
                         {
-                            Program.Log("[Toolbox] Failed to get EFT.Weather.WeatherController 3 times, skipping!");
+                            Program.Log($"[Toolbox] Failed to get EFT.Weather.WeatherController {MAX_ATTEMPTS} times, skipping!");
                             break;
                         }
                     }
@@ -227,6 +229,9 @@ namespace eft_dma_radar
 
                 if (this.FoundTOD_Sky || this.FoundEFTHardSettings || this.FoundWeatherController)
                     this.ToolboxMonoInitialized = true;
+
+                this._initialisingMonoAddresses = false;
+                Program.Log($"[ToolBox] - Attempt at initialising Mono Addresses complete");
             }
             else
             {

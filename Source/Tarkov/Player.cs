@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Numerics;
+using Offsets;
 
 namespace eft_dma_radar
 {
@@ -9,10 +11,7 @@ namespace eft_dma_radar
     public class Player
     {
         private static Dictionary<string, int> _groups = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Stopwatch _posRefreshSw = new();
-        private readonly object _posLock = new(); // sync access to this.Position (non-atomic)
         private GearManager _gearManager;
-        private Transform _transform;
 
         #region PlayerProperties
         /// <summary>
@@ -63,7 +62,8 @@ namespace eft_dma_radar
         public float ballistic_coeff { get; set; }
         public float bullet_mass { get; set; }
         public float bullet_diam { get; set; }
-        public float bullet_velocity { get; set; }
+        public float bullet_velocity { get; set; }        
+        public ulong CharacterController { get; set; }
         /// <summary>
         /// Player's current health (sum of all 7 body parts).
         /// </summary>
@@ -77,24 +77,16 @@ namespace eft_dma_radar
 
         public ulong PlayerBody { get; set; }
 
-        private Vector3 _pos = new Vector3(0, 0, 0); // backing field
-
         /// <summary>
         /// Player's Unity Position in Local Game World.
         /// </summary>
-        public Vector3 Position // 96 bits, cannot set atomically
+        public Vector3 Position
         {
-            get
-            {
-                lock (_posLock)
-                    return _pos;
-            }
-            private set
-            {
-                lock (_posLock)
-                    _pos = value;
-            }
+            get => this.Bones.TryGetValue(PlayerBones.HumanHead, out var bone)
+                   ? bone.Position
+                   : Vector3.Zero;
         }
+
         /// <summary>
         /// Cached 'Zoomed Position' on the Radar GUI. Used for mouseover events.
         /// </summary>
@@ -130,19 +122,32 @@ namespace eft_dma_radar
         public int PlayerSide { get; set; }
         public int PlayerRole { get; set; }
         public bool HasRequiredGear { get; set; } = false;
+        /// <summary>
+        /// Player's Velocity in the game world.
+        /// </summary>
+        public Vector3 Velocity { get; private set; } = Vector3.Zero;
+        private readonly ConcurrentDictionary<PlayerBones, Bone> _bones = new();
 
-        public List<ulong> BonePointers { get; } = new List<ulong>();
-        public List<Vector3> BonePositions { get; } = new List<Vector3>();
-        public List<Transform> BoneTransforms { get; } = new List<Transform>();
+        public ConcurrentDictionary<PlayerBones, Bone> Bones
+        {
+            get => this._bones;
+        }
         #endregion
 
         #region Getters
-        public List<PlayerBones> RequiredBones { get; } = new List<PlayerBones>
+        public static List<PlayerBones> RequiredBones { get; } = new List<PlayerBones>
         {
-            PlayerBones.HumanPelvis, PlayerBones.HumanHead, PlayerBones.HumanLForearm2,
-            PlayerBones.HumanLPalm, PlayerBones.HumanRForearm2, PlayerBones.HumanRPalm,
-            PlayerBones.HumanLThigh2, PlayerBones.HumanLFoot,
-            PlayerBones.HumanRThigh2, PlayerBones.HumanRFoot
+            PlayerBones.HumanHead,
+            PlayerBones.HumanSpine3,
+            PlayerBones.HumanLPalm,
+            PlayerBones.HumanRPalm,
+            PlayerBones.HumanPelvis,
+            PlayerBones.HumanLFoot,
+            PlayerBones.HumanRFoot,
+            PlayerBones.HumanLForearm1,
+            PlayerBones.HumanRForearm1,
+            PlayerBones.HumanLCalf,
+            PlayerBones.HumanRCalf
         };
 
         /// <summary>
@@ -161,7 +166,7 @@ namespace eft_dma_radar
                 this.Type is PlayerType.LocalPlayer ||
                 this.Type is PlayerType.Teammate ||
                 this.Type is PlayerType.PMC ||
-                this.Type is PlayerType.SpecialPlayer ||
+                this.Type is PlayerType.Special ||
                 this.Type is PlayerType.PlayerScav ||
                 this.Type is PlayerType.BEAR ||
                 this.Type is PlayerType.USEC);
@@ -175,7 +180,7 @@ namespace eft_dma_radar
                 this.Type is PlayerType.LocalPlayer ||
                 this.Type is PlayerType.Teammate ||
                 this.Type is PlayerType.PMC ||
-                this.Type is PlayerType.SpecialPlayer ||
+                this.Type is PlayerType.Special ||
                 this.Type is PlayerType.PlayerScav ||
                 this.Type is PlayerType.BEAR ||
                 this.Type is PlayerType.USEC) && IsActive && IsAlive;
@@ -187,7 +192,7 @@ namespace eft_dma_radar
         {
             get => (
                 this.Type is PlayerType.PMC ||
-                this.Type is PlayerType.SpecialPlayer ||
+                this.Type is PlayerType.Special ||
                 this.Type is PlayerType.PlayerScav ||
                 this.Type is PlayerType.BEAR ||
                 this.Type is PlayerType.USEC);
@@ -200,7 +205,7 @@ namespace eft_dma_radar
             get => (
                 this.Type is PlayerType.BEAR ||
                 this.Type is PlayerType.USEC ||
-                this.Type is PlayerType.SpecialPlayer ||
+                this.Type is PlayerType.Special ||
                 this.Type is PlayerType.PlayerScav) && this.IsActive && this.IsAlive;
         }
         /// <summary>
@@ -249,7 +254,7 @@ namespace eft_dma_radar
                 this.Type is PlayerType.PMC ||
                 this.Type is PlayerType.BEAR ||
                 this.Type is PlayerType.USEC ||
-                this.Type is PlayerType.SpecialPlayer ||
+                this.Type is PlayerType.Special ||
                 this.Type is PlayerType.PlayerScav ||
                 this.Type is PlayerType.Scav ||
                 this.Type is PlayerType.Raider ||
@@ -303,12 +308,7 @@ namespace eft_dma_radar
         /// PlayerInfo Address (GClass1044)
         /// </summary>
         public ulong Info { get; set; }
-        public ulong TransformInternal { get; set; }
-        public ulong VerticesAddr { get => this._transform?.VerticesAddr ?? 0x0; }
-        public ulong IndicesAddr
-        {
-            get => this._transform?.IndicesAddr ?? 0x0;
-        }
+
         /// <summary>
         /// Health Entries for each Body Part.
         /// </summary>
@@ -318,13 +318,6 @@ namespace eft_dma_radar
         {
             get => this.Base + Offsets.Player.Corpse;
         }
-        /// <summary>
-        /// IndicesAddress -> IndicesSize -> VerticesAddress -> VerticesSize
-        /// </summary>
-        public Tuple<ulong, int, ulong, int> TransformScatterReadParameters
-        {
-            get => this._transform?.GetScatterReadParameters() ?? new Tuple<ulong, int, ulong, int>(0, 0, 0, 0);
-        }
 
         public int MarkedDeadCount { get; set; } = 0;
         public string Tag { get; set; } = string.Empty;
@@ -332,10 +325,10 @@ namespace eft_dma_radar
         public string HealthStatus => this.Health switch
         {
             100 => "Healthy",
-            >= 50 => "Moderate",
-            >= 10 => "Poor",
-            >= 0 => "Critical",
-            _ => "N/A"
+            >= 75 => "Moderate",
+            >= 45 => "Poor",
+            >= 20 => "Critical",
+            _ => "n/a"
         };
 
         public bool HasThermal => _gearManager.HasThermal;
@@ -365,9 +358,6 @@ namespace eft_dma_radar
             this.Profile = playerProfile;
             this.ProfileID = profileID;
 
-            if (pos is not null)
-                this.Position = (Vector3)pos;
-
             var scatterReadMap = new ScatterReadMap(1);
 
             if (isOfflinePlayer)
@@ -383,53 +373,33 @@ namespace eft_dma_radar
             }
         }
         #endregion
-
-        #region Setters
-        /// <summary>
-        /// Set player health.
-        /// </summary>
-        public bool SetHealth(int eTagStatus)
-        {
-            try
-            {
-                this.Health = eTagStatus switch
-                {
-                    1024 => 100,
-                    2048 => 50,
-                    4096 => 10,
-                    8192 => 0,
-                    _ => -1,
-                };
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Program.Log($"ERROR getting Player '{this.Name}' Health: {ex}");
-                return false;
-            }
-        }
     #region Aimbot
+    
         public bool SetAmmo()
         {
             try
             {
+                if (!this.IsLocalPlayer || !this.IsAlive)
+                {
+                    return false;
+                }
                 //var ammo_template = Memory.ReadPtrChain(this.Base, [Offsets.HandsController.Item, 0x40, 0x198]); //[190] _defAmmoTemplate : EFT.InventoryLogic.AmmoTemplate
-////
-                //if (ammo_template != 0)
-                //{
-                //    this.bullet_speed = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->InitialSpeed : Single
-                //    this.ballistic_coeff = Memory.ReadValue<float>(ammo_template + 0x1D0);//EFT.InventoryLogic.AmmoTemplate->BallisticCoeficient : Single
-                //    this.bullet_mass = Memory.ReadValue<float>(ammo_template + 0x258);//EFT.InventoryLogic.AmmoTemplate->BulletMassGram : Single
-                //    this.bullet_diam = Memory.ReadValue<float>(ammo_template + 0x25C);//EFT.InventoryLogic.AmmoTemplate->BulletDiameterMilimeters : Single
-                //    this.bullet_velocity = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->[1BC] InitialSpeed : Single
-                //    
-                //}
+                var ammo_template = Memory.ReadPtrChain(this.Base, [Offsets.Player.HandsController, 0x68, 0x40, 0x198]);//[190] _defAmmoTemplate : EFT.InventoryLogic.AmmoTemplate
+                if (ammo_template != 0)
+                {
+                    this.bullet_speed = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->InitialSpeed : Single
+                    this.ballistic_coeff = Memory.ReadValue<float>(ammo_template + 0x1D0);//EFT.InventoryLogic.AmmoTemplate->BallisticCoeficient : Single
+                    this.bullet_mass = Memory.ReadValue<float>(ammo_template + 0x258);//EFT.InventoryLogic.AmmoTemplate->BulletMassGram : Single
+                    this.bullet_diam = Memory.ReadValue<float>(ammo_template + 0x25C);//EFT.InventoryLogic.AmmoTemplate->BulletDiameterMilimeters : Single
+                    this.bullet_velocity = Memory.ReadValue<float>(ammo_template + 0x1BC);//EFT.InventoryLogic.AmmoTemplate->[1BC] InitialSpeed : Single
+                    
+                }
                 //Program.Log($"Got Ammo Info '{bullet_speed}' '{ballistic_coeff}' '{bullet_mass}' '{bullet_diam}'");
                 return true;
             }
             catch (Exception ex)
             {
-                Program.Log($"ERROR getting Player '{this.Name}' Ammo: {ex}");
+                //Program.Log($"ERROR getting Player '{this.Name}' Ammo: {ex}");
                 return false;
             }
         }
@@ -455,6 +425,32 @@ namespace eft_dma_radar
         }
 
     #endregion
+        #region Setters
+        
+        /// <summary>
+        /// Set player health.
+        /// </summary>
+        public bool SetHealth(int eTagStatus)
+        {
+            try
+            {
+                this.Health = eTagStatus switch
+                {
+                    1024 => 100,
+                    2048 => 75,
+                    4096 => 45,
+                    8192 => 20,
+                    _ => 100,
+                };
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Program.Log($"ERROR getting Player '{this.Name}' Health: {ex}");
+                return false;
+            }
+        }
+
         /// <summary>
         /// Set player rotation (Direction/Pitch)
         /// </summary>
@@ -478,56 +474,25 @@ namespace eft_dma_radar
             }
         }
 
-        /// <summary>
-        /// Set player position (Vector3 X,Y,Z)
-        /// </summary>
-        public bool SetPosition(object[] obj)
+        public bool SetVelocity(object obj)
         {
             try
             {
-                if (obj is null)
-                    throw new NullReferenceException();
+                if (obj is not Vector3 velocity)
+                    throw new ArgumentException("Velocity data must be of type Vector3.", nameof(obj));
 
-                this.Position = this._transform.GetPosition(obj);
-
+                this.Velocity = velocity;
                 return true;
             }
-            catch (Exception ex) // Attempt to re-allocate Transform on error
+            catch (Exception ex)
             {
-                Program.Log($"ERROR getting Player '{this.Name}' Position: {ex}");
-
-                if (!this._posRefreshSw.IsRunning)
-                {
-                    this._posRefreshSw.Start();
-                }
-                else if (this._posRefreshSw.ElapsedMilliseconds < 250)
-                {
-                    return false;
-                }
-
-                try
-                {
-                    Program.Log($"Attempting to get new Transform for Player '{this.Name}'...");
-                    var transform = new Transform(this.TransformInternal, true);
-                    this._transform = transform;
-                    Program.Log($"Player '{this.Name}' obtained new Position Transform OK.");
-                }
-                catch (Exception ex2)
-                {
-                    Program.Log($"ERROR getting new Transform for Player '{this.Name}': {ex2}");
-                }
-                finally
-                {
-                    this._posRefreshSw.Restart();
-                }
-
+                Program.Log($"ERROR getting Player '{this.Name}' Velocity: {ex}");
                 return false;
             }
         }
-
-        public void SetItemInHands(ulong pointer)
+        public void UpdateItemInHands()
         {
-            this.ItemInHands = this.GearManager.GearItems.FirstOrDefault(x => x.Pointer == pointer);
+            this.ItemInHands = this.GearManager.ActiveWeapon;
         }
 
         public void CheckForRequiredGear()
@@ -644,24 +609,29 @@ namespace eft_dma_radar
             var inventoryController = round1.AddEntry<ulong>(0, 2, this.Base, null, Offsets.Player.InventoryController);
             var playerBody = round1.AddEntry<ulong>(0, 3, this.Base, null, Offsets.Player.PlayerBody);
             var movementContext = round1.AddEntry<ulong>(0, 4, this.Base, null, Offsets.Player.MovementContext);
+            var healthController = round1.AddEntry<ulong>(0, 5, this.Base, null, Offsets.Player.HealthController);
 
-            var transIntPtr2 = round2.AddEntry<ulong>(0, 5, transIntPtr1, null, Offsets.Player.To_TransformInternal[1]);
-            var name = round2.AddEntry<ulong>(0, 6, info, null, Offsets.PlayerInfo.Nickname);
-            var inventory = round2.AddEntry<ulong>(0, 7, inventoryController, null, Offsets.InventoryController.Inventory);
-            var registrationDate = round2.AddEntry<int>(0, 8, info, null, Offsets.PlayerInfo.RegistrationDate);
-            var groupID = round2.AddEntry<ulong>(0, 9, info, null, Offsets.PlayerInfo.GroupId);
-            var botSettings = round2.AddEntry<ulong>(0, 10, info, null, Offsets.PlayerInfo.Settings);
+            var transIntPtr2 = round2.AddEntry<ulong>(0, 6, transIntPtr1, null, Offsets.Player.To_TransformInternal[1]);
+            var name = round2.AddEntry<ulong>(0, 7, info, null, Offsets.PlayerInfo.Nickname);
+            var inventory = round2.AddEntry<ulong>(0, 8, inventoryController, null, Offsets.InventoryController.Inventory);
+            var registrationDate = round2.AddEntry<int>(0, 9, info, null, Offsets.PlayerInfo.RegistrationDate);
+            var groupID = round2.AddEntry<ulong>(0, 10, info, null, Offsets.PlayerInfo.GroupId);
+            var botSettings = round2.AddEntry<ulong>(0, 11, info, null, Offsets.PlayerInfo.Settings);
 
-            var transIntPtr3 = round3.AddEntry<ulong>(0, 11, transIntPtr2, null, Offsets.Player.To_TransformInternal[2]);
-            var equipment = round3.AddEntry<ulong>(0, 12, inventory, null, Offsets.Inventory.Equipment);
-            var role = round3.AddEntry<int>(0, 13, botSettings, null, Offsets.PlayerSettings.Role);
+            var transIntPtr3 = round3.AddEntry<ulong>(0, 12, transIntPtr2, null, Offsets.Player.To_TransformInternal[2]);
+            var equipment = round3.AddEntry<ulong>(0, 13, inventory, null, Offsets.Inventory.Equipment);
+            var role = round3.AddEntry<int>(0, 14, botSettings, null, Offsets.PlayerSettings.Role);
 
-            var transIntPtr4 = round4.AddEntry<ulong>(0, 14, transIntPtr3, null, Offsets.Player.To_TransformInternal[3]);
-            var inventorySlots = round4.AddEntry<ulong>(0, 15, equipment, null, Offsets.Equipment.Slots);
+            var transIntPtr4 = round4.AddEntry<ulong>(0, 15, transIntPtr3, null, Offsets.Player.To_TransformInternal[3]);
+            var inventorySlots = round4.AddEntry<ulong>(0, 16, equipment, null, Offsets.Equipment.Slots);
 
-            var transIntPtr5 = round5.AddEntry<ulong>(0, 16, transIntPtr4, null, Offsets.Player.To_TransformInternal[4]);
+            var transIntPtr5 = round5.AddEntry<ulong>(0, 17, transIntPtr4, null, Offsets.Player.To_TransformInternal[4]);
 
-            var transformInternal = round6.AddEntry<ulong>(0, 17, transIntPtr5, null, Offsets.Player.To_TransformInternal[5]);
+            var transformInternal = round6.AddEntry<ulong>(0, 18, transIntPtr5, null, Offsets.Player.To_TransformInternal[5]);
+            var characterController = round1.AddEntry<ulong>(0, 19, this.Base, null, Offsets.Player.CharacterController);
+
+            // Add Velocity scatter read from CharacterController
+            var velocity = round2.AddEntry<Vector3>(0, 20, characterController, null, Offsets.CharacterController.Velocity);
 
             scatterReadMap.Execute();
         }
@@ -672,26 +642,42 @@ namespace eft_dma_radar
                 return;
             if (!scatterReadMap.Results[0][4].TryGetResult<ulong>(out var movementContext))
                 return;
+            if (!scatterReadMap.Results[0][5].TryGetResult<ulong>(out var healthController))
+                return;
             if (!scatterReadMap.Results[0][2].TryGetResult<ulong>(out var inventoryController))
                 return;
             if (!scatterReadMap.Results[0][3].TryGetResult<ulong>(out var playerBody))
                 return;
-            if (!scatterReadMap.Results[0][6].TryGetResult<ulong>(out var name))
+            if (!scatterReadMap.Results[0][7].TryGetResult<ulong>(out var name))
                 return;
-            if (!scatterReadMap.Results[0][15].TryGetResult<ulong>(out var inventorySlots))
+            if (!scatterReadMap.Results[0][16].TryGetResult<ulong>(out var inventorySlots))
                 return;
-            if (!scatterReadMap.Results[0][17].TryGetResult<ulong>(out var transformInternal))
+            if (!scatterReadMap.Results[0][18].TryGetResult<ulong>(out var transformInternal))
                 return;
-            if (!scatterReadMap.Results[0][9].TryGetResult<ulong>(out var groupID))
+            if (!scatterReadMap.Results[0][10].TryGetResult<ulong>(out var groupID))
                 return;
-            if (!scatterReadMap.Results[0][13].TryGetResult<int>(out var role))
-                return;
+            if (!scatterReadMap.Results[0][14].TryGetResult<int>(out var role))
+                return;            
+            if (!scatterReadMap.Results[0][19].TryGetResult<ulong>(out var characterController))
+                return;    
 
             this.Info = info;
             this.PlayerRole = role;
+            this.HealthController = healthController;
+            this.CharacterController = characterController;
+            if (scatterReadMap.Results[0][20].TryGetResult<Vector3>(out var velocity))
+            {
+                this.Velocity = velocity;
+                Program.Log($"Got Velocity Info Offline '{velocity.X}' '{velocity.Y}' '{velocity.Z}'");
+            }
+            else
+            {
+                this.Velocity = Vector3.Zero;
+                Program.Log($"Couldn't get Velocity Info '0' '0' '0'");
+            }            
             this.InitializePlayerProperties(movementContext, inventoryController, inventorySlots, transformInternal, playerBody, name, groupID);
 
-            if (scatterReadMap.Results[0][8].TryGetResult<int>(out var registrationDate))
+            if (scatterReadMap.Results[0][9].TryGetResult<int>(out var registrationDate))
             {
                 var isAI = registrationDate == 0;
 
@@ -740,7 +726,7 @@ namespace eft_dma_radar
             var inventorySlots = round5.AddEntry<ulong>(0, 20, equipment, null, Offsets.Equipment.Slots);
 
             var transformInternal = round6.AddEntry<ulong>(0, 21, transIntPtr5, null, Offsets.ObservedPlayerView.To_TransformInternal[5]);
-
+            var velocity = round4.AddEntry<Vector3>(0, 22, movementContext, null, 0x10C);
             scatterReadMap.Execute();
         }
 
@@ -774,10 +760,18 @@ namespace eft_dma_radar
             this.IsLocalPlayer = false;
             this.HealthController = healthController;
             this.AccountID = Memory.ReadUnityString(accountID);
-
             this.Type = this.GetOnlinePlayerType(this.AccountID == "0");
             this.IsPMC = (this.Type == PlayerType.BEAR || this.Type == PlayerType.USEC);
-
+            if (scatterReadMap.Results[0][22].TryGetResult<Vector3>(out var velocity))
+            {
+                this.Velocity = velocity;
+                Program.Log($"Got Velocity Info Online '{velocity.X}' '{velocity.Y}' '{velocity.Z}'");
+            }
+            else
+            {
+                this.Velocity = Vector3.Zero;
+                Program.Log($"Couldn't get Online Velocity Info '0' '0' '0'");
+            }
             this.FinishAlloc();
         }
 
@@ -787,13 +781,10 @@ namespace eft_dma_radar
             this.InventoryController = inventoryController;
             this.InventorySlots = inventorySlots;
             this._gearManager = new GearManager(this.InventorySlots);
-            this.TransformInternal = transformInternal;
             this.PlayerBody = playerBody;
             this.Name = Memory.ReadUnityString(name);
             this.Name = Helpers.TransliterateCyrillic(this.Name);
             this.PlayerSide = playerSide;
-
-            this._transform = new Transform(this.TransformInternal, true);
 
             if (groupID != 0)
             {
@@ -814,16 +805,55 @@ namespace eft_dma_radar
         /// </summary>
         private void SetupBones()
         {
-            var boneMatrix = Memory.ReadPtrChain(this.PlayerBody, [0x30, 0x30, 0x10]);
-
-            foreach (var bone in RequiredBones)
+            try
             {
-                var boneIndex = (uint)bone;
-                var pointer = Memory.ReadPtrChain(boneMatrix, [0x20 + (boneIndex * 0x8), 0x10]);
+                var boneMatrix = Memory.ReadPtrChain(this.PlayerBody, new uint[] { 0x30, 0x30, 0x10 });
 
-                this.BonePointers.Add(pointer);
-                this.BoneTransforms.Add(new Transform(pointer, false));
-                this.BonePositions.Add(new Vector3(0f, 0f, 0f));
+                if (boneMatrix == 0)
+                    return;
+
+                foreach (var bone in Player.RequiredBones)
+                {
+                    var boneOffset = 0x20 + ((uint)bone * 0x8);
+                    var bonePointer = Memory.ReadPtrChain(boneMatrix, new uint[] { boneOffset, 0x10 });
+
+                    if (bonePointer == 0)
+                        continue;
+
+                    this._bones.TryAdd(bone, new Bone(bonePointer));
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log($"ERROR setting up bones for Player '{this.Name}': {ex}");
+            }
+        }
+
+        public void RefreshBoneTransforms()
+        {
+            try
+            {
+                var boneMatrix = Memory.ReadPtrChain(this.PlayerBody, new uint[] { 0x30, 0x30, 0x10 });
+                if (boneMatrix == 0)
+                    return;
+
+                foreach (var bone in Player.RequiredBones)
+                {
+                    var boneOffset = 0x20 + ((uint)bone * 0x8);
+                    var bonePointer = Memory.ReadPtrChain(boneMatrix, new uint[] { boneOffset, 0x10 });
+
+                    if (bonePointer == 0)
+                        continue;
+
+                    if (this._bones.TryGetValue(bone, out var boneTransform))
+                        boneTransform.UpdateTransform(bonePointer);
+                    else
+                        this._bones.TryAdd(bone, new Bone(bonePointer));
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log($"ERROR refreshing bones for Player '{this.Name}': {ex}");
             }
         }
 
@@ -842,7 +872,7 @@ namespace eft_dma_radar
         public async void RefreshWatchlistStatus()
         {
             var isOnWatchlist = _watchlistManager.IsOnWatchlist(this.AccountID, out Watchlist.Entry entry);
-            var isSpecialPlayer = this.Type == PlayerType.SpecialPlayer;
+            var isSpecialPlayer = this.Type == PlayerType.Special;
 
             if ((!isSpecialPlayer || isSpecialPlayer) && isOnWatchlist)
             {
@@ -864,7 +894,7 @@ namespace eft_dma_radar
                 if (!string.IsNullOrEmpty(entry.Tag))
                 {
                     this.Tag = entry.Tag;
-                    this.Type = PlayerType.SpecialPlayer;
+                    this.Type = PlayerType.Special;
                 }
             }
             else if (isSpecialPlayer && !isOnWatchlist)
